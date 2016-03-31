@@ -12,6 +12,7 @@
 		clickSlide: clickSlide,
 		showPhone: showPhone,
 		setPhonePos: setPhonePos,
+		getClipRect: getClipRect,
 		cloneTrackingObj: cloneTrackingObj
 	});
 
@@ -21,10 +22,10 @@
 		this.slideBox = $('.slide-box');
 		this.slideItems = this.slider.find('li');
 		this.phone = $('.phone');
-		
+
 		this.initSliderSize();
 		$(window).resize(this.initSliderSize());
-		
+
 		this.autoPlay();
 		this.showPhone();
 		this.mouseHover();
@@ -109,7 +110,7 @@
 			var $trackingImg = $activeItem.find('.tracking-img'),
 				trackingImgPos = $trackingImg.position(),
 				trackingEdgeW = $trackingImg.width() / 3 * 2,
-				trackingEdgeH = $trackingImg.height() / 3,
+				trackingEdgeH = $trackingImg.height() / 3 * 2,
 
 				phonePos = self.phone.position(),
 				$model = $activeItem.find('.model'),
@@ -118,7 +119,7 @@
 
 			if (phonePos.left >= trackingImgPos.left &&
 				phonePos.left <= (trackingImgPos.left + trackingEdgeW) &&
-				phonePos.top >= (trackingImgPos.top - 50) &&
+				phonePos.top >= (trackingImgPos.top - 200) &&
 				phonePos.top <= (trackingImgPos.top + trackingEdgeH)) {
 
 				if (!self.isTracking) {
@@ -127,10 +128,35 @@
 				}
 				self.isTracking = true;
 
+				var phoneRatio = self.phone[0].naturalHeight / self.phone.height();
+
+				var phonePadding = {
+						left: 32 / phoneRatio,
+						right: 32 / phoneRatio,
+						top: 142 / phoneRatio,
+						bottom: 120 / phoneRatio
+					},
+					modelPos = {
+						left: trackingImgPos.left + ($trackingImg.width() - $model.width()) / 2,
+						top: trackingImgPos.top + ($trackingImg.height() - $model.height()) / 2,
+						right: trackingImgPos.left + ($trackingImg.width() - $model.width()) / 2 + $model.width(),
+						bottom: trackingImgPos.top + ($trackingImg.height() - $model.height()) / 2 + $model.height()
+					};
+
+				phonePos = {
+					left: phonePos.left + phonePadding.left,
+					right: phonePos.left + self.phone.width() - phonePadding.right,
+					top: phonePos.top + phonePadding.top,
+					bottom: phonePos.top + self.phone.height() - phonePadding.bottom
+				};
+
+				var clipRect = self.getClipRect(phonePos, modelPos);
+
 				$('.model.isClone').css({
-					left: phonePos.left + self.phone.width() / 2 - halfModelWidth,
-					top: phonePos.top + self.phone.height() / 2 - halfModelHeight
-				})
+					left: modelPos.left,
+					top: modelPos.top,
+					clip: 'rect(' + clipRect.top + 'px,' + clipRect.right + 'px,' + clipRect.bottom + 'px,' + clipRect.left + 'px)'
+				});
 
 				$activeItem.addClass('blur');
 			} else {
@@ -197,6 +223,15 @@
 				left: e.pageX - halfPhoneWidth,
 				top: e.pageY - halfPhoneHeight
 			});
+		}
+	}
+
+	function getClipRect(phonePos, modelPos) {
+		return {
+			top: phonePos.top - modelPos.top,
+			right: phonePos.right - modelPos.left,
+			bottom: phonePos.bottom - modelPos.top,
+			left: phonePos.left - modelPos.left
 		}
 	}
 
